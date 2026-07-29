@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jefferson Park II | Financial Dashboard</title>
+<script src="chart.umd.js"></script>
+<script src="data.js"></script>
+<style>
+  :root{
+    --jp-red:#AB3746;
+    --jp-red-dark:#7c2733;
+    --jp-gold:#D8A26D;
+    --jp-gold-light:#EAD5A1;
+    --jp-black:#2E2F33;
+    --jp-white:#FFFFFF;
+    --bg:#F8F4EC;
+    --card-bg:#FFFFFF;
+    --text:#2E2F33;
+    --muted:#6b6560;
+    --pos:#3f7a4d;
+    --neg:#AB3746;
+    --border:#e7dfd0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  header{
+    background:var(--jp-red);
+    border-bottom:6px solid var(--jp-gold);
+    padding:22px 32px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  header img{
+    height:64px;
+    border-radius:14px;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,.4));
+  }
+  header .titles h1{
+    margin:0;
+    color:var(--jp-white);
+    font-size:24px;
+    letter-spacing:.3px;
+  }
+  header .titles p{
+    margin:2px 0 0;
+    color:var(--jp-gold-light);
+    font-size:13px;
+  }
+  header .spacer{flex:1;}
+  header .period-picker{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--jp-white);
+    font-size:14px;
+  }
+  header select{
+    font-size:14px;
+    padding:7px 10px;
+    border-radius:6px;
+    border:1px solid var(--jp-gold);
+    background:var(--jp-black);
+    color:var(--jp-white);
+  }
+  main{
+    max-width:1200px;
+    margin:0 auto;
+    padding:28px 24px 60px;
+  }
+  .section-title{
+    font-size:16px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--jp-red-dark);
+    margin:36px 0 14px;
+    border-bottom:2px solid var(--border);
+    padding-bottom:8px;
+  }
+  .section-title:first-child{margin-top:0;}
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+    gap:14px;
+  }
+  .kpi{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-top:4px solid var(--jp-gold);
+    border-radius:8px;
+    padding:16px 18px;
+  }
+  .kpi .label{
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
+  .kpi .value{
+    font-size:24px;
+    font-weight:700;
+    color:var(--jp-black);
+    margin-top:4px;
+  }
+  .kpi .delta{
+    font-size:12.5px;
+    margin-top:6px;
+    font-weight:600;
+  }
+  .kpi .delta.pos{color:var(--pos);}
+  .kpi .delta.neg{color:var(--neg);}
+  .kpi .delta.flat{color:var(--muted);}
+  .chart-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  .chart-grid.single{grid-template-columns:1fr;}
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 20px 12px;
+  }
+  .card h3{
+    margin:0 0 4px;
+    font-size:15px;
+    color:var(--jp-black);
+  }
+  .card .sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .card canvas{max-height:320px;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--card-bg);
+    font-size:13.5px;
+  }
+  thead th{
+    background:var(--jp-black);
+    color:var(--jp-gold-light);
+    text-align:right;
+    padding:10px 12px;
+    position:sticky;
+    top:0;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+  thead th:first-child{text-align:left;}
+  tbody td{
+    padding:8px 12px;
+    text-align:right;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  tbody td:first-child{text-align:left; font-weight:600;}
+  tbody tr:hover{background:#fbf7ee;}
+  .table-wrap{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+  }
+  .neg-text{color:var(--neg);}
+  .pos-text{color:var(--pos);}
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    padding:24px;
+  }
+  .badge{
+    display:inline-block;
+    background:var(--jp-gold-light);
+    color:var(--jp-red-dark);
+    padding:2px 10px;
+    border-radius:20px;
+    font-size:11.5px;
+    font-weight:700;
+    margin-left:8px;
+  }
+  @media (max-width:820px){
+    .chart-grid{grid-template-columns:1fr;}
+  }
+
+  .top-tabs{
+    display:flex;
+    gap:6px;
+    margin:22px 0 0;
+    border-bottom:2px solid var(--border);
+  }
+  .top-tabs button{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    padding:10px 18px;
+    border:none;
+    background:none;
+    color:var(--muted);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    margin-bottom:-2px;
+  }
+  .top-tabs button.active{
+    color:var(--jp-red-dark);
+    border-bottom-color:var(--jp-red);
+  }
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .sub-tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:18px 0 18px;
+  }
+  .sub-tabs button{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:700;
+    padding:7px 14px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    background:var(--card-bg);
+    color:var(--jp-black);
+    cursor:pointer;
+  }
+  .sub-tabs button.active{
+    background:var(--jp-red);
+    border-color:var(--jp-red);
+    color:var(--jp-white);
+  }
+  .lab-panel{display:none;}
+  .lab-panel.active{display:block;}
+
+  .pivot-table{width:100%; border-collapse:collapse; background:var(--card-bg); font-size:13px;}
+  .pivot-table th, .pivot-table td{padding:8px 10px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap;}
+  .pivot-table th{background:var(--jp-black); color:var(--jp-gold-light); position:sticky; top:0;}
+  .pivot-table th:first-child, .pivot-table td:first-child{text-align:left; font-weight:600; position:sticky; left:0; background:var(--card-bg);}
+  .pivot-table th.ytd-col, .pivot-table td.ytd-col{background:var(--jp-gold-light); font-weight:700; color:var(--jp-red-dark);}
+
+  .tree-row{
+    display:grid;
+    grid-template-columns:1fr 120px 120px 120px;
+    gap:6px;
+    align-items:center;
+    padding:9px 12px;
+    border-bottom:1px solid var(--border);
+    font-size:13.5px;
+  }
+  .tree-row.toggleable{cursor:pointer;}
+  .tree-row.toggleable:hover{background:#fbf7ee;}
+  .tree-row .amt{text-align:right;}
+  .tree-row.level-0{font-weight:700; background:#faf6ec;}
+  .tree-row.level-1{font-weight:600;}
+  .tree-row .caret{display:inline-block; width:14px; color:var(--jp-red-dark); transition:transform .15s ease;}
+  .tree-row.open .caret{transform:rotate(90deg);}
+  .tree-children{display:none; border-left:2px solid var(--border); margin-left:16px;}
+  .tree-children.open{display:block;}
+
+  .statement-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  .statement-card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 20px;
+  }
+  .statement-card h4{
+    margin:0 0 4px;
+    font-size:15px;
+    color:var(--jp-red-dark);
+    border-bottom:2px solid var(--jp-gold);
+    padding-bottom:8px;
+  }
+  .statement-card .stmt-sub{font-size:12px; color:var(--muted); margin-bottom:10px;}
+  .stmt-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .stmt-table td{padding:4px 6px; text-align:right;}
+  .stmt-table td:first-child{text-align:left;}
+  .stmt-table tr.stmt-heading td{font-weight:700; color:var(--jp-black); padding-top:10px; text-align:left;}
+  .stmt-table tr.stmt-indent td:first-child{padding-left:18px; color:var(--text); font-weight:400;}
+  .stmt-table tr.stmt-subtotal td{font-weight:700; border-top:1px solid var(--jp-gold); padding-top:6px;}
+  .stmt-table tr.stmt-grandtotal td{font-weight:700; color:var(--jp-red-dark); border-top:2px solid var(--jp-red); font-size:14px; padding-top:8px;}
+  @media (max-width:900px){
+    .statement-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo.png" alt="Jefferson Park logo">
+  <div class="titles">
+    <h1>Jefferson Park II Community Association</h1>
+    <p>Financial Dashboard &mdash; Monthly Report Packets</p>
+  </div>
+  <div class="spacer"></div>
+  <div class="period-picker">
+    <label for="monthSelect">Report period:</label>
+    <select id="monthSelect"></select>
+  </div>
+</header>
+
+<main>
+
+  <nav class="top-tabs">
+    <button class="top-tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="top-tab-btn" data-tab="lab">Table Lab</button>
+  </nav>
+
+<div id="tab-dashboard" class="tab-panel active">
+
+  <div class="section-title">Snapshot <span class="badge" id="periodBadge"></span></div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="section-title">Cash &amp; Assets Trend</div>
+  <div class="chart-grid">
+    <div class="card">
+      <h3>Bank Balances Over Time</h3>
+      <div class="sub">Operating vs. Reserve account balances, all reported months</div>
+      <canvas id="bankChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>Total Assets &amp; Equity</h3>
+      <div class="sub">Total assets vs. total equity, all reported months</div>
+      <canvas id="assetsChart"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">Income &amp; Expenses (Year-to-Date)</div>
+  <div class="chart-grid">
+    <div class="card">
+      <h3>YTD Income vs. Expenses</h3>
+      <div class="sub">Cumulative for each fiscal year (resets each January)</div>
+      <canvas id="incomeExpenseChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>Budget vs. Actual &mdash; <span id="bvaCardPeriod"></span></h3>
+      <div class="sub">Year-to-date figures for the selected report period</div>
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">Delinquencies</div>
+  <div class="chart-grid single">
+    <div class="card">
+      <h3>Total Past-Due Balance</h3>
+      <div class="sub">Aggregate association-wide past-due balance by month (no owner-level detail shown)</div>
+      <canvas id="delinquentChart"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">Monthly Summary Table</div>
+  <div class="table-wrap">
+    <table id="summaryTable">
+      <thead>
+        <tr>
+          <th data-key="key">Period</th>
+          <th data-key="operating">Operating</th>
+          <th data-key="reserve">Reserve</th>
+          <th data-key="total_assets">Total Assets</th>
+          <th data-key="total_liabilities">Liabilities</th>
+          <th data-key="total_equity">Equity</th>
+          <th data-key="income_actual">YTD Income</th>
+          <th data-key="expenses_actual">YTD Expenses</th>
+          <th data-key="net_actual">YTD Net</th>
+          <th data-key="delinquent">Past Due</th>
+        </tr>
+      </thead>
+      <tbody id="summaryBody"></tbody>
+    </table>
+  </div>
+
+</div><!-- /tab-dashboard -->
+
+<div id="tab-lab" class="tab-panel">
+
+  <div class="section-title">Monthly Summary Table &mdash; Development Lab</div>
+  <div class="sub" style="margin:-8px 0 4px;">Prototype layouts for the monthly summary table, built from the same underlying data as the dashboard above. For internal review only.</div>
+
+  <nav class="sub-tabs">
+    <button class="sub-tab-btn active" data-lab="v1">V1 &middot; Original</button>
+    <button class="sub-tab-btn" data-lab="v2">V2 &middot; Year Pivot</button>
+    <button class="sub-tab-btn" data-lab="v3">V3 &middot; Drill-Down</button>
+    <button class="sub-tab-btn" data-lab="v4">V4 &middot; Statement View</button>
+  </nav>
+
+  <div id="lab-v1" class="lab-panel active">
+    <div class="sub">All 18 reported months, flat and sortable &mdash; identical structure to the dashboard table above.</div>
+    <div class="table-wrap">
+      <table id="labV1Table">
+        <thead>
+          <tr>
+            <th data-key="key">Period</th>
+            <th data-key="operating">Operating</th>
+            <th data-key="reserve">Reserve</th>
+            <th data-key="total_assets">Total Assets</th>
+            <th data-key="total_liabilities">Liabilities</th>
+            <th data-key="total_equity">Equity</th>
+            <th data-key="income_actual">YTD Income</th>
+            <th data-key="expenses_actual">YTD Expenses</th>
+            <th data-key="net_actual">YTD Net</th>
+            <th data-key="delinquent">Past Due</th>
+          </tr>
+        </thead>
+        <tbody id="labV1Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="lab-v2" class="lab-panel">
+    <div class="sub">Metrics as rows, months as columns for the selected year, with a highlighted year-to-date column.</div>
+    <div class="period-picker" style="margin-bottom:14px;">
+      <label for="labV2Year">Year:</label>
+      <select id="labV2Year"></select>
+    </div>
+    <div class="table-wrap">
+      <table id="labV2Table" class="pivot-table"></table>
+    </div>
+  </div>
+
+  <div id="lab-v3" class="lab-panel">
+    <div class="sub">Pick a month, then click Income or Expenses to drill down into every category and line item, with budget vs. actual and variance at each level.</div>
+    <div class="period-picker" style="margin-bottom:14px;">
+      <label for="labV3Month">Report period:</label>
+      <select id="labV3Month"></select>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="tree-row" style="font-weight:700; color:var(--jp-gold-light); background:var(--jp-black);">
+        <div>Category</div><div class="amt">Budget</div><div class="amt">Actual</div><div class="amt">Variance</div>
+      </div>
+      <div id="labV3Body"></div>
+    </div>
+  </div>
+
+  <div id="lab-v4" class="lab-panel">
+    <div class="sub">A clean, single-month replica of the Balance Sheet and Budget vs. Actual statement, styled after the source report packet.</div>
+    <div class="period-picker" style="margin-bottom:14px;">
+      <label for="labV4Month">Report period:</label>
+      <select id="labV4Month"></select>
+    </div>
+    <div class="statement-grid" id="labV4Grid"></div>
+  </div>
+
+</div><!-- /tab-lab -->
+
+  <footer>
+    Data extracted from the Jefferson Park II Community Association Monthly Report Packets (Jan 2025 &ndash; Jun 2026).
+    Delinquent account figures are shown in aggregate only. Generated <span id="genDate"></span>.
+  </footer>
+
+</main>
+
+<script>
+const months = Object.keys(REPORT_DATA).sort();
+const fmtMoney = (v, decimals=0) => {
+  if (v === null || v === undefined) return '—';
+  return v.toLocaleString('en-US', {style:'currency', currency:'USD', minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+};
+const fmtMonthLabel = (key) => {
+  const e = REPORT_DATA[key];
+  return e.month_name.slice(0,3) + ' \'' + String(e.year).slice(2);
+};
+
+// ---- populate period picker ----
+const sel = document.getElementById('monthSelect');
+months.forEach(k => {
+  const opt = document.createElement('option');
+  opt.value = k;
+  opt.textContent = REPORT_DATA[k].month_name + ' ' + REPORT_DATA[k].year;
+  sel.appendChild(opt);
+});
+sel.value = months[months.length - 1];
+
+// ---- KPI cards ----
+function renderKpis(key){
+  const idx = months.indexOf(key);
+  const cur = REPORT_DATA[key];
+  const prev = idx > 0 ? REPORT_DATA[months[idx-1]] : null;
+  document.getElementById('periodBadge').textContent = 'As of ' + cur.month_name + ' ' + cur.year;
+  document.getElementById('bvaCardPeriod').textContent = cur.month_name + ' ' + cur.year;
+
+  const cards = [
+    {label:'Total Assets', val: cur.balance_sheet.total_assets, prevVal: prev && prev.balance_sheet.total_assets},
+    {label:'Operating Cash', val: cur.balance_sheet.operating_bank, prevVal: prev && prev.balance_sheet.operating_bank},
+    {label:'Reserve Cash', val: cur.balance_sheet.reserve_bank, prevVal: prev && prev.balance_sheet.reserve_bank},
+    {label:'Total Equity', val: cur.balance_sheet.total_equity, prevVal: prev && prev.balance_sheet.total_equity},
+    {label:'YTD Net (Income - Expenses)', val: cur.summary.net_actual, prevVal: prev && prev.summary.net_actual},
+    {label:'Total Past Due', val: cur.delinquent_total, prevVal: prev && prev.delinquent_total},
+  ];
+
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = '';
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'kpi';
+    let deltaHtml = '';
+    if (prev && c.prevVal !== null && c.prevVal !== undefined && c.val !== null){
+      const diff = c.val - c.prevVal;
+      const cls = Math.abs(diff) < 0.005 ? 'flat' : (diff > 0 ? 'pos' : 'neg');
+      const arrow = diff > 0 ? '▲' : (diff < 0 ? '▼' : '—');
+      deltaHtml = `<div class="delta ${cls}">${arrow} ${fmtMoney(Math.abs(diff))} vs prior month</div>`;
+    }
+    div.innerHTML = `<div class="label">${c.label}</div><div class="value">${fmtMoney(c.val)}</div>${deltaHtml}`;
+    grid.appendChild(div);
+  });
+}
+
+// ---- Chart helpers ----
+Chart.defaults.font.family = 'Arial, Helvetica, sans-serif';
+Chart.defaults.color = '#2E2F33';
+const COLORS = {red:'#AB3746', gold:'#D8A26D', black:'#2E2F33', goldLight:'#EAD5A1', green:'#3f7a4d'};
+
+const labels = months.map(fmtMonthLabel);
+
+let bankChart, assetsChart, incomeExpenseChart, categoryChart, delinquentChart;
+
+function baseLineOpts(extra){
+  return Object.assign({
+    responsive:true,
+    interaction:{mode:'index', intersect:false},
+    plugins:{legend:{position:'bottom', labels:{boxWidth:12, padding:14}}},
+    scales:{ y:{ ticks:{ callback:(v)=>fmtMoney(v) } } }
+  }, extra || {});
+}
+
+function buildBankChart(){
+  const ctx = document.getElementById('bankChart');
+  bankChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Operating', data: months.map(k=>REPORT_DATA[k].balance_sheet.operating_bank), borderColor:COLORS.red, backgroundColor:COLORS.red, tension:.25, pointRadius:2},
+        {label:'Reserve', data: months.map(k=>REPORT_DATA[k].balance_sheet.reserve_bank), borderColor:COLORS.gold, backgroundColor:COLORS.gold, tension:.25, pointRadius:2},
+      ]
+    },
+    options: baseLineOpts()
+  });
+}
+
+function buildAssetsChart(){
+  const ctx = document.getElementById('assetsChart');
+  assetsChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Total Assets', data: months.map(k=>REPORT_DATA[k].balance_sheet.total_assets), borderColor:COLORS.black, backgroundColor:COLORS.black, tension:.25, pointRadius:2},
+        {label:'Total Equity', data: months.map(k=>REPORT_DATA[k].balance_sheet.total_equity), borderColor:COLORS.gold, backgroundColor:COLORS.gold, tension:.25, pointRadius:2, borderDash:[5,3]},
+      ]
+    },
+    options: baseLineOpts()
+  });
+}
+
+function buildIncomeExpenseChart(){
+  const ctx = document.getElementById('incomeExpenseChart');
+  incomeExpenseChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'YTD Income (Actual)', data: months.map(k=>REPORT_DATA[k].summary.income_actual), borderColor:COLORS.green, backgroundColor:COLORS.green, tension:.2, pointRadius:2},
+        {label:'YTD Expenses (Actual)', data: months.map(k=>REPORT_DATA[k].summary.expenses_actual), borderColor:COLORS.red, backgroundColor:COLORS.red, tension:.2, pointRadius:2},
+        {label:'YTD Net', data: months.map(k=>REPORT_DATA[k].summary.net_actual), borderColor:COLORS.black, backgroundColor:COLORS.black, tension:.2, pointRadius:2, borderDash:[4,3]},
+      ]
+    },
+    options: baseLineOpts()
+  });
+}
+
+const CATEGORY_LABELS = [
+  {key:'Total Income', name:'Income'},
+  {key:'Total for Administrative', name:'Administrative'},
+  {key:'Total for Common Area Maintenance', name:'Common Area Maint.'},
+  {key:'6015 - Pond Improvements', name:'Pond Improvements'},
+  {key:'Total for Utilities', name:'Utilities'},
+  {key:'Total for Insurance Premium', name:'Insurance'},
+  {key:'Total for Legal Fees', name:'Legal Fees'},
+  {key:'5065 - Budget Contingency', name:'Budget Contingency'},
+];
+
+function getRow(monthKey, label){
+  const rows = REPORT_DATA[monthKey].budget_vs_actual_rows || [];
+  return rows.find(r => r.label === label);
+}
+
+function buildCategoryChart(monthKey){
+  const ctx = document.getElementById('categoryChart');
+  const rows = REPORT_DATA[monthKey].budget_vs_actual_rows || [];
+  const hasSubgroups = CATEGORY_LABELS.slice(1).some(c => getRow(monthKey, c.key));
+
+  let names, budget, actual;
+  if (hasSubgroups){
+    names = CATEGORY_LABELS.map(c=>c.name);
+    budget = CATEGORY_LABELS.map(c => { const r = getRow(monthKey, c.key); return r ? r.budget : 0; });
+    actual = CATEGORY_LABELS.map(c => { const r = getRow(monthKey, c.key); return r ? r.actual : 0; });
+  } else {
+    const skip = new Set(['Total Income','Total Expenses','Net Total']);
+    const incomeRow = getRow(monthKey, 'Total Income');
+    const expenseRow = getRow(monthKey, 'Total Expenses');
+    const items = rows.filter(r => !skip.has(r.label) && !r.label.startsWith('Total for'));
+    names = ['Income', ...items.map(r=>r.label), 'Expenses (Total)'];
+    budget = [incomeRow ? incomeRow.budget : 0, ...items.map(r=>r.budget), expenseRow ? expenseRow.budget : 0];
+    actual = [incomeRow ? incomeRow.actual : 0, ...items.map(r=>r.actual), expenseRow ? expenseRow.actual : 0];
+  }
+
+  if (categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:names,
+      datasets:[
+        {label:'Budget', data:budget, backgroundColor:COLORS.goldLight, borderColor:COLORS.gold, borderWidth:1},
+        {label:'Actual', data:actual, backgroundColor:COLORS.red, borderColor:COLORS.red, borderWidth:1},
+      ]
+    },
+    options:{
+      responsive:true,
+      indexAxis:'y',
+      plugins:{legend:{position:'bottom', labels:{boxWidth:12,padding:14}}},
+      scales:{ x:{ ticks:{ callback:(v)=>fmtMoney(v) } } }
+    }
+  });
+}
+
+function buildDelinquentChart(){
+  const ctx = document.getElementById('delinquentChart');
+  delinquentChart = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Total Past Due', data: months.map(k=>REPORT_DATA[k].delinquent_total), backgroundColor:COLORS.red}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{ y:{ ticks:{ callback:(v)=>fmtMoney(v) } } }
+    }
+  });
+}
+
+// ---- summary table ----
+function renderTable(){
+  const tbody = document.getElementById('summaryBody');
+  tbody.innerHTML = '';
+  months.slice().reverse().forEach(k => {
+    const e = REPORT_DATA[k];
+    const tr = document.createElement('tr');
+    const netCls = (e.summary.net_actual||0) >= 0 ? 'pos-text' : 'neg-text';
+    tr.innerHTML = `
+      <td>${e.month_name} ${e.year}</td>
+      <td>${fmtMoney(e.balance_sheet.operating_bank)}</td>
+      <td>${fmtMoney(e.balance_sheet.reserve_bank)}</td>
+      <td>${fmtMoney(e.balance_sheet.total_assets)}</td>
+      <td>${fmtMoney(e.balance_sheet.total_liabilities)}</td>
+      <td>${fmtMoney(e.balance_sheet.total_equity)}</td>
+      <td>${fmtMoney(e.summary.income_actual)}</td>
+      <td>${fmtMoney(e.summary.expenses_actual)}</td>
+      <td class="${netCls}">${fmtMoney(e.summary.net_actual)}</td>
+      <td>${fmtMoney(e.delinquent_total)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---- table sorting ----
+document.querySelectorAll('#summaryTable thead th').forEach(th => {
+  let asc = true;
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    const rows = months.slice();
+    rows.sort((a,b) => {
+      const ea = REPORT_DATA[a], eb = REPORT_DATA[b];
+      const va = key==='key' ? a : (['operating','reserve'].includes(key) ? ea.balance_sheet[key+'_bank'] : (ea.balance_sheet[key] ?? ea.summary[key] ?? (key==='delinquent'? ea.delinquent_total : null)));
+      const vb = key==='key' ? b : (['operating','reserve'].includes(key) ? eb.balance_sheet[key+'_bank'] : (eb.balance_sheet[key] ?? eb.summary[key] ?? (key==='delinquent'? eb.delinquent_total : null)));
+      if (va < vb) return asc ? -1 : 1;
+      if (va > vb) return asc ? 1 : -1;
+      return 0;
+    });
+    asc = !asc;
+    const tbody = document.getElementById('summaryBody');
+    tbody.innerHTML = '';
+    rows.forEach(k => {
+      const e = REPORT_DATA[k];
+      const tr = document.createElement('tr');
+      const netCls = (e.summary.net_actual||0) >= 0 ? 'pos-text' : 'neg-text';
+      tr.innerHTML = `
+        <td>${e.month_name} ${e.year}</td>
+        <td>${fmtMoney(e.balance_sheet.operating_bank)}</td>
+        <td>${fmtMoney(e.balance_sheet.reserve_bank)}</td>
+        <td>${fmtMoney(e.balance_sheet.total_assets)}</td>
+        <td>${fmtMoney(e.balance_sheet.total_liabilities)}</td>
+        <td>${fmtMoney(e.balance_sheet.total_equity)}</td>
+        <td>${fmtMoney(e.summary.income_actual)}</td>
+        <td>${fmtMoney(e.summary.expenses_actual)}</td>
+        <td class="${netCls}">${fmtMoney(e.summary.net_actual)}</td>
+        <td>${fmtMoney(e.delinquent_total)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+});
+
+// ---- init ----
+function init(){
+  renderKpis(sel.value);
+  buildBankChart();
+  buildAssetsChart();
+  buildIncomeExpenseChart();
+  buildCategoryChart(sel.value);
+  buildDelinquentChart();
+  renderTable();
+  document.getElementById('genDate').textContent = GENERATED_ON;
+}
+
+sel.addEventListener('change', () => {
+  renderKpis(sel.value);
+  buildCategoryChart(sel.value);
+});
+
+init();
+
+
+// ================= TABLE LAB =================
+
+// ---- shared row template (same shape as the main dashboard table) ----
+function summaryRowHtmlPlain(k){
+  const e = REPORT_DATA[k];
+  const netCls = (e.summary.net_actual||0) >= 0 ? 'pos-text' : 'neg-text';
+  return `
+    <td>${e.month_name} ${e.year}</td>
+    <td>${fmtMoney(e.balance_sheet.operating_bank)}</td>
+    <td>${fmtMoney(e.balance_sheet.reserve_bank)}</td>
+    <td>${fmtMoney(e.balance_sheet.total_assets)}</td>
+    <td>${fmtMoney(e.balance_sheet.total_liabilities)}</td>
+    <td>${fmtMoney(e.balance_sheet.total_equity)}</td>
+    <td>${fmtMoney(e.summary.income_actual)}</td>
+    <td>${fmtMoney(e.summary.expenses_actual)}</td>
+    <td class="${netCls}">${fmtMoney(e.summary.net_actual)}</td>
+    <td>${fmtMoney(e.delinquent_total)}</td>
+  `;
+}
+
+function labSortComparator(key, asc){
+  return (a,b) => {
+    const ea = REPORT_DATA[a], eb = REPORT_DATA[b];
+    const va = key==='key' ? a : (['operating','reserve'].includes(key) ? ea.balance_sheet[key+'_bank'] : (ea.balance_sheet[key] ?? ea.summary[key] ?? (key==='delinquent'? ea.delinquent_total : null)));
+    const vb = key==='key' ? b : (['operating','reserve'].includes(key) ? eb.balance_sheet[key+'_bank'] : (eb.balance_sheet[key] ?? eb.summary[key] ?? (key==='delinquent'? eb.delinquent_total : null)));
+    if (va < vb) return asc ? -1 : 1;
+    if (va > vb) return asc ? 1 : -1;
+    return 0;
+  };
+}
+
+// ---- V1: plain sortable table (mirrors the dashboard table) ----
+function initLabV1(){
+  const table = document.getElementById('labV1Table');
+  const body = document.getElementById('labV1Body');
+  let current = months.slice();
+
+  function render(){
+    body.innerHTML = '';
+    current.slice().reverse().forEach(k => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = summaryRowHtmlPlain(k);
+      body.appendChild(tr);
+    });
+  }
+
+  table.querySelectorAll('thead th').forEach(th => {
+    let asc = true;
+    th.addEventListener('click', () => {
+      current.sort(labSortComparator(th.dataset.key, asc));
+      asc = !asc;
+      render();
+    });
+  });
+
+  render();
+}
+
+// ---- V2: year pivot table (metrics as rows, months as columns, YTD column) ----
+const labYears = [...new Set(months.map(k => REPORT_DATA[k].year))].sort();
+function labYearLabel(y){
+  const count = months.filter(k => REPORT_DATA[k].year === y).length;
+  return count < 12 ? `${y} (Year-to-Date)` : `${y}`;
+}
+
+const V2_METRICS = [
+  {label:'Operating Cash', get:e=>e.balance_sheet.operating_bank},
+  {label:'Reserve Cash', get:e=>e.balance_sheet.reserve_bank},
+  {label:'Total Bank Accounts', get:e=>e.balance_sheet.total_bank_accounts},
+  {label:'Total Assets', get:e=>e.balance_sheet.total_assets},
+  {label:'Total Liabilities', get:e=>e.balance_sheet.total_liabilities},
+  {label:'Total Equity', get:e=>e.balance_sheet.total_equity},
+  {label:'YTD Income (Actual)', get:e=>e.summary.income_actual},
+  {label:'YTD Expenses (Actual)', get:e=>e.summary.expenses_actual},
+  {label:'YTD Net', get:e=>e.summary.net_actual},
+  {label:'Total Past Due', get:e=>e.delinquent_total},
+];
+
+function renderPivotTable(year){
+  const yearMonths = months.filter(k => REPORT_DATA[k].year === year).sort();
+  const table = document.getElementById('labV2Table');
+  const lastKey = yearMonths[yearMonths.length - 1];
+
+  let html = '<thead><tr><th>Metric</th>';
+  yearMonths.forEach(k => { html += `<th>${REPORT_DATA[k].month_name.slice(0,3)}</th>`; });
+  html += '<th class="ytd-col">YTD</th></tr></thead><tbody>';
+  V2_METRICS.forEach(m => {
+    html += `<tr><td>${m.label}</td>`;
+    yearMonths.forEach(k => { html += `<td>${fmtMoney(m.get(REPORT_DATA[k]))}</td>`; });
+    html += `<td class="ytd-col">${fmtMoney(m.get(REPORT_DATA[lastKey]))}</td></tr>`;
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function initLabV2(){
+  const sel = document.getElementById('labV2Year');
+  labYears.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = labYearLabel(y);
+    sel.appendChild(opt);
+  });
+  sel.value = labYears[labYears.length - 1];
+  renderPivotTable(parseInt(sel.value));
+  sel.addEventListener('change', () => renderPivotTable(parseInt(sel.value)));
+}
+
+// ---- V3: income/expense drill-down tree ----
+const EXPENSE_GROUP_HEADERS = new Set(['Administrative','Common Area Maintenance','Utilities','Insurance Premium','Legal Fees']);
+
+function buildTree(monthKey){
+  const rows = REPORT_DATA[monthKey].budget_vs_actual_rows || [];
+  const tiIdx = rows.findIndex(r => r.label === 'Total Income');
+  const teIdx = rows.findIndex(r => r.label === 'Total Expenses');
+  const ntIdx = rows.findIndex(r => r.label === 'Net Total');
+
+  const incomeItems = tiIdx >= 0 ? rows.slice(0, tiIdx) : [];
+  const incomeTotal = tiIdx >= 0 ? rows[tiIdx] : null;
+  const expenseSlice = (tiIdx >= 0 && teIdx >= 0) ? rows.slice(tiIdx + 1, teIdx) : [];
+  const expenseTotal = teIdx >= 0 ? rows[teIdx] : null;
+  const netTotal = ntIdx >= 0 ? rows[ntIdx] : null;
+
+  const expenseTree = [];
+  let curGroup = null;
+  expenseSlice.forEach(r => {
+    if (EXPENSE_GROUP_HEADERS.has(r.label)){
+      curGroup = {label:r.label, children:[], total:null};
+      expenseTree.push(curGroup);
+    } else if (r.label.startsWith('Total for ')){
+      if (curGroup) curGroup.total = r;
+      curGroup = null;
+    } else if (curGroup){
+      curGroup.children.push(r);
+    } else {
+      expenseTree.push({leaf:true, row:r});
+    }
+  });
+
+  return {incomeItems, incomeTotal, expenseTree, expenseTotal, netTotal};
+}
+
+function treeRowDiv(label, row, level, toggleable){
+  const div = document.createElement('div');
+  div.className = 'tree-row level-' + level + (toggleable ? ' toggleable' : '');
+  const varClass = row && row.variance != null ? (row.variance >= 0 ? 'pos-text' : 'neg-text') : '';
+  div.innerHTML = `
+    <div>${toggleable ? '<span class="caret">&#9656;</span>' : ''}${label}</div>
+    <div class="amt">${row ? fmtMoney(row.budget,2) : ''}</div>
+    <div class="amt">${row ? fmtMoney(row.actual,2) : ''}</div>
+    <div class="amt ${varClass}">${row ? fmtMoney(row.variance,2) : ''}</div>
+  `;
+  return div;
+}
+
+function renderTree(monthKey){
+  const container = document.getElementById('labV3Body');
+  container.innerHTML = '';
+  const tree = buildTree(monthKey);
+
+  const incomeRow = treeRowDiv('Income', tree.incomeTotal, 0, true);
+  const incomeChildren = document.createElement('div');
+  incomeChildren.className = 'tree-children';
+  tree.incomeItems.forEach(r => incomeChildren.appendChild(treeRowDiv(r.label, r, 1, false)));
+  incomeRow.addEventListener('click', () => {
+    incomeRow.classList.toggle('open');
+    incomeChildren.classList.toggle('open');
+  });
+  container.appendChild(incomeRow);
+  container.appendChild(incomeChildren);
+
+  const expenseRow = treeRowDiv('Expenses', tree.expenseTotal, 0, true);
+  const expenseChildren = document.createElement('div');
+  expenseChildren.className = 'tree-children';
+  tree.expenseTree.forEach(node => {
+    if (node.leaf){
+      expenseChildren.appendChild(treeRowDiv(node.row.label, node.row, 1, false));
+    } else {
+      const hasKids = node.children.length > 0;
+      const groupRow = treeRowDiv(node.label, node.total, 1, hasKids);
+      expenseChildren.appendChild(groupRow);
+      if (hasKids){
+        const groupChildren = document.createElement('div');
+        groupChildren.className = 'tree-children';
+        node.children.forEach(r => groupChildren.appendChild(treeRowDiv(r.label, r, 2, false)));
+        groupRow.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          groupRow.classList.toggle('open');
+          groupChildren.classList.toggle('open');
+        });
+        expenseChildren.appendChild(groupChildren);
+      }
+    }
+  });
+  expenseRow.addEventListener('click', () => {
+    expenseRow.classList.toggle('open');
+    expenseChildren.classList.toggle('open');
+  });
+  container.appendChild(expenseRow);
+  container.appendChild(expenseChildren);
+
+  if (tree.netTotal){
+    container.appendChild(treeRowDiv('Net Total', tree.netTotal, 0, false));
+  }
+}
+
+function initLabV3(){
+  const sel = document.getElementById('labV3Month');
+  months.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = REPORT_DATA[k].month_name + ' ' + REPORT_DATA[k].year;
+    sel.appendChild(opt);
+  });
+  sel.value = months[months.length - 1];
+  renderTree(sel.value);
+  sel.addEventListener('change', () => renderTree(sel.value));
+}
+
+// ---- V4: statement view (Balance Sheet + Budget vs. Actual replica) ----
+function stmtRow(label, val, cls){
+  return `<tr class="${cls||''}"><td>${label}</td><td>${val===null||val===undefined?'—':fmtMoney(val,2)}</td></tr>`;
+}
+
+function renderBalanceSheetStatement(monthKey){
+  const bs = REPORT_DATA[monthKey].balance_sheet;
+  let html = '<table class="stmt-table"><tbody>';
+  html += '<tr class="stmt-heading"><td colspan="2">Assets</td></tr>';
+  html += stmtRow('Operating', bs.operating_bank, 'stmt-indent');
+  html += stmtRow('Reserve', bs.reserve_bank, 'stmt-indent');
+  html += stmtRow('Total Bank Accounts', bs.total_bank_accounts, 'stmt-subtotal');
+  html += stmtRow('Accounts Receivable', bs.accounts_receivable, 'stmt-indent');
+  html += stmtRow('Funds in Transit', bs.funds_in_transit, 'stmt-indent');
+  html += stmtRow('Total Other Assets', bs.total_other_assets, 'stmt-subtotal');
+  html += stmtRow('Total Assets', bs.total_assets, 'stmt-grandtotal');
+  html += '<tr class="stmt-heading"><td colspan="2">Liabilities &amp; Equity</td></tr>';
+  html += stmtRow('Accounts Payable', bs.accounts_payable, 'stmt-indent');
+  html += stmtRow('Total Liabilities', bs.total_liabilities, 'stmt-subtotal');
+  html += stmtRow('Total Equity', bs.total_equity, 'stmt-subtotal');
+  html += stmtRow('Total Liabilities &amp; Equity', bs.total_assets, 'stmt-grandtotal');
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderBudgetStatement(monthKey){
+  const rows = REPORT_DATA[monthKey].budget_vs_actual_rows || [];
+  if (!rows.length) return '<div style="color:var(--muted);padding:10px 0;">No budget vs. actual detail available for this period.</div>';
+  let html = '<table class="stmt-table"><tbody>';
+  html += '<tr class="stmt-heading"><td>Category</td><td>Budget</td><td>Actual</td><td>Variance</td></tr>';
+  rows.forEach(r => {
+    if (r.is_header){
+      html += `<tr class="stmt-heading"><td colspan="4" style="padding-left:10px;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">${r.label}</td></tr>`;
+      return;
+    }
+    const isTotal = r.label.startsWith('Total') || r.label === 'Net Total';
+    const cls = r.label === 'Net Total' ? 'stmt-grandtotal' : (isTotal ? 'stmt-subtotal' : 'stmt-indent');
+    const varColor = r.variance >= 0 ? 'pos-text' : 'neg-text';
+    html += `<tr class="${cls}"><td>${r.label}</td><td>${fmtMoney(r.budget,2)}</td><td>${fmtMoney(r.actual,2)}</td><td class="${varColor}">${fmtMoney(r.variance,2)}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderStatementView(monthKey){
+  const e = REPORT_DATA[monthKey];
+  const grid = document.getElementById('labV4Grid');
+  grid.innerHTML = `
+    <div class="statement-card">
+      <h4>Balance Sheet</h4>
+      <div class="stmt-sub">As of ${e.month_name} ${e.year}</div>
+      ${renderBalanceSheetStatement(monthKey)}
+    </div>
+    <div class="statement-card">
+      <h4>Budget vs. Actual</h4>
+      <div class="stmt-sub">Year-to-date through ${e.month_name} ${e.year}</div>
+      ${renderBudgetStatement(monthKey)}
+      <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;">
+        <strong>Total Past Due:</strong> ${fmtMoney(e.delinquent_total)}
+      </div>
+    </div>
+  `;
+}
+
+function initLabV4(){
+  const sel = document.getElementById('labV4Month');
+  months.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = REPORT_DATA[k].month_name + ' ' + REPORT_DATA[k].year;
+    sel.appendChild(opt);
+  });
+  sel.value = months[months.length - 1];
+  renderStatementView(sel.value);
+  sel.addEventListener('change', () => renderStatementView(sel.value));
+}
+
+// ---- tab switching ----
+document.querySelectorAll('.top-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.top-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.lab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('lab-' + btn.dataset.lab).classList.add('active');
+  });
+});
+
+// ---- initialize all lab variants ----
+initLabV1();
+initLabV2();
+initLabV3();
+initLabV4();
+
+</script>
+
+</body>
+</html>
