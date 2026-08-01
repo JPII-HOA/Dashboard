@@ -7,20 +7,27 @@
 <script src="chart.umd.js"></script>
 <script src="data.js"></script>
 <style>
+  @font-face{
+    font-family:'JPScript';
+    src:url('TeXGyreChorus-MediumItalic.otf') format('opentype');
+    font-display:swap;
+  }
   :root{
-    --jp-red:#AB3746;
-    --jp-red-dark:#7c2733;
-    --jp-gold:#D8A26D;
-    --jp-gold-light:#EAD5A1;
-    --jp-black:#2E2F33;
+    --jp-red:#841229;        /* Maroon — brand primary (from logo) */
+    --jp-red-dark:#5A0C1C;   /* Maroon Deep — emphasis text, grand totals */
+    --jp-gold:#B8863E;       /* Gold — brand primary (from logo) */
+    --jp-gold-light:#F3E9D8; /* Gold Tint — badges, highlighted columns */
+    --jp-maroon-tint:#F0E3E5;/* Maroon Tint — subtle backgrounds */
+    --jp-black:#000000;      /* Black — brand swatch, high-contrast bars */
     --jp-white:#FFFFFF;
-    --bg:#F8F4EC;
+    --bg:#FAF6F0;
     --card-bg:#FFFFFF;
-    --text:#2E2F33;
+    --text:#241B1C;
     --muted:#6b6560;
     --pos:#3f7a4d;
-    --neg:#AB3746;
-    --border:#e7dfd0;
+    --neg:var(--jp-red);
+    --border:#E4D8C8;
+    --hover-bg:#F7F1E8;
   }
   *{box-sizing:border-box;}
   body{
@@ -46,8 +53,17 @@
   header .titles h1{
     margin:0;
     color:var(--jp-white);
-    font-size:24px;
+    font-size:22px;
+    font-weight:700;
     letter-spacing:.3px;
+  }
+  header .titles h1 .brand-script{
+    font-family:'JPScript', cursive;
+    font-weight:400;
+    font-size:1.55em;
+    color:var(--jp-gold-light);
+    margin-right:6px;
+    vertical-align:-2px;
   }
   header .titles p{
     margin:2px 0 0;
@@ -165,7 +181,7 @@
     white-space:nowrap;
   }
   tbody td:first-child{text-align:left; font-weight:600;}
-  tbody tr:hover{background:#fbf7ee;}
+  tbody tr:hover{background:var(--hover-bg);}
   .table-wrap{
     overflow-x:auto;
     border:1px solid var(--border);
@@ -259,9 +275,9 @@
     font-size:13.5px;
   }
   .tree-row.toggleable{cursor:pointer;}
-  .tree-row.toggleable:hover{background:#fbf7ee;}
+  .tree-row.toggleable:hover{background:var(--hover-bg);}
   .tree-row .amt{text-align:right;}
-  .tree-row.level-0{font-weight:700; background:#faf6ec;}
+  .tree-row.level-0{font-weight:700; background:var(--hover-bg);}
   .tree-row.level-1{font-weight:600;}
   .tree-row .caret{display:inline-block; width:14px; color:var(--jp-red-dark); transition:transform .15s ease;}
   .tree-row.open .caret{transform:rotate(90deg);}
@@ -304,7 +320,7 @@
 <header>
   <img src="logo.png" alt="Jefferson Park logo">
   <div class="titles">
-    <h1>Jefferson Park II Community Association</h1>
+    <h1><span class="brand-script">Jefferson Park</span>II &middot; Community Association</h1>
     <p>Financial Dashboard &mdash; Monthly Report Packets</p>
   </div>
   <div class="spacer"></div>
@@ -521,8 +537,8 @@ function renderKpis(key){
 
 // ---- Chart helpers ----
 Chart.defaults.font.family = 'Arial, Helvetica, sans-serif';
-Chart.defaults.color = '#2E2F33';
-const COLORS = {red:'#AB3746', gold:'#D8A26D', black:'#2E2F33', goldLight:'#EAD5A1', green:'#3f7a4d'};
+Chart.defaults.color = '#241B1C';
+const COLORS = {red:'#841229', gold:'#B8863E', black:'#000000', goldLight:'#F3E9D8', green:'#3f7a4d'};
 
 const labels = months.map(fmtMonthLabel);
 
