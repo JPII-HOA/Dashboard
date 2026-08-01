@@ -52,7 +52,7 @@
     font-family:'JPScript', cursive;
     font-weight:400;
     font-size:1.55em;
-    color:var(--jp-gold-light);
+    /* color:var(--jp-gold-light); */
     margin-right:6px;
     vertical-align:-2px;
   }
